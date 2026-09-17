@@ -245,3 +245,31 @@ Expected output:
   Supabase Data API requests therefore match no application policy. Do not
   enable direct table access until a deliberate UUID-to-user mapping and
   corresponding policies are added.
+
+## Online Deployment
+
+The repository includes `render.yaml` for the FastAPI/WebSocket backend. A
+simple production setup is:
+
+1. In Supabase, copy the server-side PostgreSQL connection string and keep the
+   password private. The pooler connection is usually preferable for hosted
+   services.
+2. In Render, create a Blueprint from this repository. Set `DATABASE_URL` to
+   the Supabase PostgreSQL URL and `CORS_ORIGINS` to the final frontend URL,
+   such as `https://your-chat.vercel.app`. Render runs `alembic upgrade head`
+   before starting the API.
+3. Deploy `frontend` as a Vercel project with **Root Directory** set to
+   `frontend`, framework preset `Vite`, and these production variables:
+
+   ```env
+   VITE_API_URL=https://your-backend.onrender.com/api
+   VITE_WS_URL=wss://your-backend.onrender.com/ws
+   ```
+
+4. Replace the temporary frontend URL in Render's `CORS_ORIGINS` with the
+   actual Vercel URL, then redeploy the backend. WebSockets must use `wss://`
+   when the frontend uses HTTPS.
+
+Never add `DATABASE_URL`, `JWT_SECRET`, Supabase service-role keys, or database
+passwords to Vercel or to any `VITE_*` variable. Vite exposes `VITE_*` values
+to the browser.

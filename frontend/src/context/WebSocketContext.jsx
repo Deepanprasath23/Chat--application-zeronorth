@@ -14,10 +14,11 @@ export const WebSocketProvider = ({ children }) => {
   const connect = useCallback(() => {
     if (!token) return;
 
-    // Use current host for websocket connection if window is available
+    const configuredUrl = import.meta.env.VITE_WS_URL;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws?token=${token}`;
+    const wsBaseUrl = configuredUrl || `${protocol}//${host}/ws`;
+    const wsUrl = `${wsBaseUrl}?token=${encodeURIComponent(token)}`;
 
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
