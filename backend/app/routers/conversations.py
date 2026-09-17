@@ -98,7 +98,7 @@ def create_direct_conversation(
         return _format_conversation(conv, db)
 
     # Create new direct conversation
-    new_conv = Conversation(type="direct")
+    new_conv = Conversation(type="direct", created_by=current_user.id)
     db.add(new_conv)
     db.commit()
     db.refresh(new_conv)
@@ -129,7 +129,7 @@ def create_group_conversation(
             detail="Group name is required"
         )
 
-    new_conv = Conversation(type="group", name=group_name)
+    new_conv = Conversation(type="group", name=group_name, created_by=current_user.id)
     db.add(new_conv)
     db.commit()
     db.refresh(new_conv)
@@ -179,7 +179,7 @@ def add_group_members(
         .filter(ConversationMember.conversation_id == conversation_id, ConversationMember.user_id == current_user.id)
         .first()
     )
-    if not current_membership:
+    if not current_membership or current_membership.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this conversation")
 
     # Existing member IDs

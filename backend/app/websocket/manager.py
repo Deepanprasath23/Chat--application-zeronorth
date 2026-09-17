@@ -2,7 +2,7 @@ import json
 from typing import Dict, Set, List
 from fastapi import WebSocket
 from datetime import datetime, timezone
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, set_current_user
 from app.models.user import User
 
 class ConnectionManager:
@@ -24,6 +24,7 @@ class ConnectionManager:
             # Update user online status in DB
             db = SessionLocal()
             try:
+                set_current_user(db, user_id)
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
                     user.is_online = True
@@ -44,6 +45,7 @@ class ConnectionManager:
                 # Update user offline status & last_seen in DB
                 db = SessionLocal()
                 try:
+                    set_current_user(db, user_id)
                     user = db.query(User).filter(User.id == user_id).first()
                     if user:
                         user.is_online = False

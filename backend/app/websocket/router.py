@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, set_current_user
 from app.core.security import decode_token
 from app.models.user import User
 from app.models.conversation import Conversation
@@ -42,6 +42,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
         return
 
     current_user_id = user.id
+    set_current_user(db, current_user_id)
     db.close()
 
     # Accept connection and register in ConnectionManager
@@ -74,6 +75,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = None):
 
                 db_session = SessionLocal()
                 try:
+                    set_current_user(db_session, current_user_id)
                     # Check membership authorization
                     membership = db_session.query(ConversationMember).filter(
                         ConversationMember.conversation_id == conversation_id,

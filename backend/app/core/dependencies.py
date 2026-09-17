@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.core.database import get_db, set_current_user
 from app.core.security import decode_token
 from app.models.user import User
 
@@ -53,4 +53,5 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    set_current_user(db, user.id)
     return user

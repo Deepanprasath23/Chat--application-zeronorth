@@ -96,11 +96,13 @@ CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
 ### 1. Backend Setup
 
 1. Navigate to the `backend` folder:
+
    ```bash
    cd backend
    ```
 
 2. Create a virtual environment and activate it:
+
    ```bash
    # Windows
    python -m venv venv
@@ -112,14 +114,23 @@ CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
    ```
 
 3. Install dependencies:
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. Run Database Migrations:
+
    ```bash
    alembic upgrade head
    ```
+
+   Migration `002_enable_rls` enables RLS for `users`, `conversations`,
+   `conversation_members`, and `messages`. The backend validates its local JWT
+   and sets the transaction-local PostgreSQL setting `app.user_id`; the
+   policies use that value for membership checks. Keep `DATABASE_URL` on the
+   server. The frontend must use the FastAPI API and must not connect directly
+   to Supabase tables.
 
 5. Start the FastAPI server:
    ```bash
@@ -132,11 +143,13 @@ CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173"
 ### 2. Frontend Setup
 
 1. Open a new terminal and navigate to the `frontend` folder:
+
    ```bash
    cd frontend
    ```
 
 2. Install npm dependencies:
+
    ```bash
    npm install
    ```
@@ -159,6 +172,7 @@ cd backend
 ```
 
 Expected output:
+
 ```
 ======================== 7 passed in 3.59s ========================
 ```
@@ -169,21 +183,22 @@ Expected output:
 
 ### REST Endpoints
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Register new user account | No |
-| `POST` | `/api/auth/login` | Log in and receive JWT token | No |
-| `GET` | `/api/auth/me` | Fetch active user profile | Yes |
-| `GET` | `/api/users` | Search/list users for messaging | Yes |
-| `GET` | `/api/conversations` | List user's conversations | Yes |
-| `POST` | `/api/conversations/direct` | Get or create 1-on-1 chat | Yes |
-| `POST` | `/api/conversations/group` | Create group chat | Yes |
-| `POST` | `/api/conversations/{id}/members` | Add members to group chat | Yes |
-| `GET` | `/api/conversations/{id}/messages` | Retrieve message history | Yes |
+| Method | Endpoint                           | Description                     | Auth Required |
+| ------ | ---------------------------------- | ------------------------------- | ------------- |
+| `POST` | `/api/auth/register`               | Register new user account       | No            |
+| `POST` | `/api/auth/login`                  | Log in and receive JWT token    | No            |
+| `GET`  | `/api/auth/me`                     | Fetch active user profile       | Yes           |
+| `GET`  | `/api/users`                       | Search/list users for messaging | Yes           |
+| `GET`  | `/api/conversations`               | List user's conversations       | Yes           |
+| `POST` | `/api/conversations/direct`        | Get or create 1-on-1 chat       | Yes           |
+| `POST` | `/api/conversations/group`         | Create group chat               | Yes           |
+| `POST` | `/api/conversations/{id}/members`  | Add members to group chat       | Yes           |
+| `GET`  | `/api/conversations/{id}/messages` | Retrieve message history        | Yes           |
 
 ### WebSocket Endpoint (`/ws?token=<JWT_TOKEN>`)
 
 #### Inbound Client Messages:
+
 - **Send Message:**
   ```json
   {
@@ -202,6 +217,7 @@ Expected output:
   ```
 
 #### Outbound Server Events:
+
 - **New Message:** `{"type": "new_message", "payload": { "conversation_id": 1, "message": {...} }}`
 - **Presence Update:** `{"type": "presence_update", "payload": { "user_id": 2, "is_online": true }}`
 - **Typing Status:** `{"type": "typing_status", "payload": { "conversation_id": 1, "user_id": 2, "is_typing": true }}`
@@ -215,3 +231,17 @@ Expected output:
 3. Run `alembic upgrade head` to apply all database tables and indexes.
 4. Deploy the FastAPI backend on Railway, Render, or AWS App Runner.
 5. Deploy the React Vite frontend on Vercel, Netlify, or Cloudflare Pages.
+
+### RLS and Supabase dashboard requirements
+
+- Run `alembic upgrade head` against the production Supabase database.
+- Use a server-only PostgreSQL connection in `DATABASE_URL`. PostgreSQL owners
+  and service roles bypass ordinary RLS, so the FastAPI membership checks remain
+  mandatory for this architecture.
+- Never put `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_JWT_SECRET`, or a service
+  role key in frontend environment variables. `SUPABASE_KEY` is not required by
+  the current frontend.
+- This app uses local integer-user JWTs, not Supabase Auth UUID identity. Direct
+  Supabase Data API requests therefore match no application policy. Do not
+  enable direct table access until a deliberate UUID-to-user mapping and
+  corresponding policies are added.
