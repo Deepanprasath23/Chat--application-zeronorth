@@ -273,3 +273,11 @@ simple production setup is:
 Never add `DATABASE_URL`, `JWT_SECRET`, Supabase service-role keys, or database
 passwords to Vercel or to any `VITE_*` variable. Vite exposes `VITE_*` values
 to the browser.
+
+### Free hosting notes
+
+The free setup uses Supabase Free, Render Free, and Vercel Hobby. Render Free
+services sleep after inactivity, so the first request can take up to a minute
+and active WebSocket connections will be interrupted when the service sleeps.
+This is suitable for demos and small personal projects, but not guaranteed
+24/7 production uptime.
