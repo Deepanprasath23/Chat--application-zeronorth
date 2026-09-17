@@ -1,4 +1,5 @@
 import os
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from typing import List, Union
 from pydantic import field_validator, ConfigDict
 from pydantic_settings import BaseSettings
@@ -36,7 +37,11 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             v = v.strip().strip('"').strip("'")
         if v and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql://", 1)
+            v = v.replace("postgres://", "postgresql://", 1)
+        if v and v.startswith("postgresql://"):
+            parts = urlsplit(v)
+            query = [(key, value) for key, value in parse_qsl(parts.query) if key != "pgbouncer"]
+            v = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
         return v
 
     @field_validator("CORS_ORIGINS", mode="before")
